@@ -23,6 +23,16 @@ export const KITS: Record<string, Kit> = {
     printTime: "18h 40m",
     filament: "312 g",
   },
+  charizard: {
+    id: "charizard",
+    name: "Charizard",
+    tagline: "1:1 scale — see the finished print stand on your desk before you commit the filament.",
+    glb: "/models/charizard/charizard.glb",
+    usdz: "/models/charizard/charizard.usdz",
+    dims: { w: 151, d: 147, h: 98 },
+    printTime: "3h 30m", // estimate — replace with your slicer's figure
+    filament: "13 g", // estimate (~15% infill) — replace with your slicer's figure
+  },
 };
 
 export const DEFAULT_KIT_ID = "astronaut";

@@ -24,20 +24,30 @@ BASE_URL=https://your-domain.example npm run qr
 
 ## Adding a kit
 
-Adding a new kit requires exactly three steps:
+From a print STL to a live AR kit:
 
-1. **Add one entry to `KITS` in `lib/kits.ts`** with hosted `glb` and `usdz`
-   URLs and `dims` (width/depth/height in millimetres). The GLB must be
-   authored at true metric scale (1 unit = 1 m) so `ar-scale="fixed"` places
-   it life-size.
-2. **Host the two model files** (Vercel static assets or a CDN) with the
-   correct MIME types: `.glb` → `model/gltf-binary`, `.usdz` →
-   `model/vnd.usdz+zip`. If the files are cross-origin, set CORS headers on
-   the model host.
+1. **Convert the STL** to GLB + USDZ at true metric scale — see
+   [`scripts/model-pipeline/`](scripts/model-pipeline/README.md) (Blender). Drop
+   the two files in `public/models/<kit-id>/`.
+2. **Add one entry to `KITS` in `lib/kits.ts`** with `glb`/`usdz` pointing at
+   `/models/<kit-id>/…` and `dims` (width/depth/height in millimetres, printed
+   by the conversion script). The GLB is authored at 1 unit = 1 m so
+   `ar-scale="fixed"` places it life-size.
 3. **Run `npm run qr`** to generate that kit's QR code into `public/qr/`.
 
-No other code changes are needed — the `/ar/[kit]` route resolves the kit
-param against the registry automatically.
+No other code changes are needed — the `/ar/[kit]` route resolves the kit param
+against the registry automatically, and `next.config.ts` already serves
+`/models/**` with the MIME types AR viewers require (`.glb` →
+`model/gltf-binary`, `.usdz` → `model/vnd.usdz+zip`) plus range support.
+
+**Hosting note:** models under `public/` are committed to the repo and served
+from Vercel's edge. That's fine for a handful of kits; if scan volume or kit
+count grows, move the files to object storage with zero egress (e.g. Cloudflare
+R2) and point the registry URLs there — set CORS on the model host if it's a
+different origin.
+
+The `astronaut` kit uses external demo assets; the `charizard` kit is a
+self-hosted example produced with the pipeline above.
 
 ## Verifying AR on-device
 
