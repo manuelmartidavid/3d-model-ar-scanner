@@ -12,7 +12,7 @@
     "qr": "tsx scripts/qr.ts"
   },
   "dependencies": {
-    "next": "15.5.4",
+    "next": "15.5.20",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "@google/model-viewer": "4.1.0"
