@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>AR Preview</title>
+<meta name="theme-color" content="#0E1116" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+<style>
+  :root{
+    --plate:#0E1116;
+    --plate-2:#141922;
+    --panel:#161C26;
+    --ink:#E9EEF6;
+    --ink-dim:#8792A6;
+    --ink-faint:#5A6474;
+    --line:rgba(255,255,255,.10);
+    --line-soft:rgba(255,255,255,.055);
+    --amber:#FF7A18;
+    --amber-2:#FFB04A;
+    --grid:rgba(255,255,255,.035);
+    --grid-strong:rgba(255,255,255,.07);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--plate);
+    color:var(--ink);
+    font-family:"Inter",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100dvh;
+    display:flex;flex-direction:column;
+    /* build-plate grid */
+    background-image:
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+      linear-gradient(var(--grid-strong) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid-strong) 1px,transparent 1px),
+      radial-gradient(120% 80% at 50% -10%, #1a2130 0%, var(--plate) 60%);
+    background-size:28px 28px,28px 28px,140px 140px,140px 140px,100% 100%;
+    background-position:center;
+  }
+  .loadbar{position:fixed;top:0;left:0;height:2px;width:0;background:linear-gradient(90deg,var(--amber),var(--amber-2));z-index:50;transition:width .25s ease,opacity .4s ease;box-shadow:0 0 10px rgba(255,122,24,.6)}
+
+  /* HUD top bar */
+  .hud{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:16px clamp(16px,5vw,40px);
+    border-bottom:1px solid var(--line-soft);
+    font-family:"JetBrains Mono",monospace;
+  }
+  .eyebrow{display:flex;align-items:center;gap:9px;font-size:11px;letter-spacing:.28em;color:var(--ink-dim);text-transform:uppercase}
+  .eyebrow b{color:var(--ink);font-weight:700;letter-spacing:.28em}
+  .stat{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-dim);letter-spacing:.06em}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 0 rgba(255,122,24,.55);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,122,24,.5)}70%{box-shadow:0 0 0 7px rgba(255,122,24,0)}100%{box-shadow:0 0 0 0 rgba(255,122,24,0)}}
+
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:clamp(18px,4vw,40px) clamp(16px,5vw,40px) clamp(28px,5vw,52px);width:100%;max-width:1040px;margin:0 auto}
+
+  /* dimension frame around the viewer */
+  .stage{position:relative;width:100%;max-width:560px}
+  .frame{position:relative;padding:34px 40px}
+  .frame::before,.frame::after,.frame > .br1,.frame > .br2{content:"";position:absolute;width:26px;height:26px;border:1.5px solid var(--amber);opacity:.85}
+  .frame::before{top:0;left:0;border-right:0;border-bottom:0}
+  .frame::after{top:0;right:0;border-left:0;border-bottom:0}
+  .frame .br1{bottom:0;left:0;border-right:0;border-top:0}
+  .frame .br2{bottom:0;right:0;border-left:0;border-top:0}
+
+  model-viewer{width:100%;height:min(56vh,440px);--poster-color:transparent;background:transparent}
+
+  .dim{position:absolute;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.08em;color:var(--ink-dim);white-space:nowrap}
+  .dim .v{color:var(--ink)}
+  .dim-w{top:8px;left:50%;transform:translateX(-50%)}
+  .dim-h{top:50%;right:8px;transform:translateY(-50%) rotate(0deg);writing-mode:vertical-rl}
+  .dim-d{bottom:8px;left:50%;transform:translateX(-50%)}
+  .dim .cap{color:var(--ink-faint);margin-right:6px}
+
+  .title{text-align:center;margin:26px 0 4px}
+  .title h1{font-family:"Chakra Petch",sans-serif;font-weight:700;letter-spacing:.01em;font-size:clamp(26px,6vw,40px);margin:0;line-height:1.02}
+  .title p{color:var(--ink-dim);margin:12px auto 0;max-width:44ch;font-size:15px;line-height:1.5}
+
+  .cta-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:26px;width:100%}
+  .cta{
+    appearance:none;border:0;cursor:pointer;
+    font-family:"Chakra Petch",sans-serif;font-weight:600;letter-spacing:.04em;
+    font-size:16px;color:#1a0f04;
+    background:linear-gradient(180deg,var(--amber-2),var(--amber));
+    padding:16px 30px;border-radius:12px;
+    display:inline-flex;align-items:center;gap:11px;
+    box-shadow:0 10px 30px -8px rgba(255,122,24,.55),inset 0 1px 0 rgba(255,255,255,.35);
+    transition:transform .15s ease,box-shadow .2s ease;
+  }
+  .cta:hover{transform:translateY(-1px);box-shadow:0 16px 40px -10px rgba(255,122,24,.6),inset 0 1px 0 rgba(255,255,255,.4)}
+  .cta:active{transform:translateY(0)}
+  .cta svg{width:19px;height:19px}
+  .hint{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink-faint);text-align:center;max-width:38ch;line-height:1.6}
+  .hint.desk{display:none}
+
+  /* readouts */
+  .readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:34px;width:100%;max-width:560px;
+    border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--line-soft)}
+  .ro{background:var(--plate-2);padding:16px 14px;text-align:center}
+  .ro .k{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint)}
+  .ro .val{font-family:"Chakra Petch",sans-serif;font-weight:600;font-size:17px;margin-top:7px;color:var(--ink)}
+
+  footer{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-faint);text-align:center;
+    padding:20px;border-top:1px solid var(--line-soft);letter-spacing:.05em}
+  .notice{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--amber-2);text-align:center;margin-top:14px;letter-spacing:.04em;display:none}
+
+  @media (max-width:420px){
+    .frame{padding:28px 30px}
+    .readouts .ro{padding:14px 8px}
+    .ro .val{font-size:15px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .dot{animation:none}
+    .cta{transition:none}
+  }
+</style>
+</head>
+<body>
+<div class="loadbar" id="loadbar"></div>
+
+<div class="hud">
+  <div class="eyebrow"><b>AR</b>&nbsp;PREVIEW</div>
+  <div class="stat"><span class="dot"></span><span id="statusId">READY · —</span></div>
+</div>
+
+<main>
+  <div class="stage">
+    <div class="frame">
+      <span class="br1"></span><span class="br2"></span>
+      <span class="dim dim-w"><span class="cap">W</span><span class="v" id="dimW">—</span></span>
+      <span class="dim dim-h"><span class="cap">H</span><span class="v" id="dimH">—</span></span>
+      <span class="dim dim-d"><span class="cap">D</span><span class="v" id="dimD">—</span></span>
+
+      <model-viewer id="mv"
+        ar ar-modes="webxr scene-viewer quick-look" ar-scale="fixed" ar-placement="floor"
+        camera-controls touch-action="pan-y" auto-rotate rotation-per-second="16deg"
+        interaction-prompt="none" shadow-intensity="0.85" exposure="1.05"
+        environment-image="neutral" alt="3D model preview">
+        <button slot="ar-button" class="cta" id="arBtn" style="position:static">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>
+          View in your room
+        </button>
+      </model-viewer>
+    </div>
+  </div>
+
+  <div class="title">
+    <h1 id="kitName">Loading…</h1>
+    <p id="kitTagline"></p>
+  </div>
+
+  <div class="cta-wrap">
+    <p class="hint desk" id="deskHint">↳ open this page on your phone to place it at real scale</p>
+    <p class="notice" id="notice"></p>
+  </div>
+
+  <div class="readouts">
+    <div class="ro"><div class="k">Footprint</div><div class="val" id="roDims">—</div></div>
+    <div class="ro"><div class="k">Print time</div><div class="val" id="roTime">—</div></div>
+    <div class="ro"><div class="k">Filament</div><div class="val" id="roFil">—</div></div>
+  </div>
+</main>
+
+<footer>QR → AR · true-scale placement · no app install</footer>
+
+<script>
+  // ── Kit registry ────────────────────────────────────────────────
+  // Add one entry per kit. src = .glb (Android/WebXR), ios = .usdz (iOS Quick Look).
+  // dims in millimetres — these drive the on-screen dimension callouts.
+  // IMPORTANT: author the GLB at true real-world scale (Blender: metric, 1 unit = 1 m)
+  // so ar-scale="fixed" places it at actual size.
+  const KITS = {
+    astronaut: {
+      name: "Orbital Astronaut",
+      tagline: "1:1 scale — see it stand in your room before you commit the filament.",
+      src: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+      ios: "https://modelviewer.dev/shared-assets/models/Astronaut.usdz",
+      dims: { w: 470, d: 300, h: 1780 },
+      time: "18h 40m",
+      filament: "312 g"
+    }
+    // your_kit_id: {
+    //   name: "Your Kit",
+    //   tagline: "One line about it.",
+    //   src: "https://your-cdn/your-model.glb",
+    //   ios: "https://your-cdn/your-model.usdz",
+    //   dims: { w: 120, d: 90, h: 150 },
+    //   time: "6h 10m",
+    //   filament: "98 g"
+    // },
+  };
+
+  const DEFAULT_ID = "astronaut";
+  const params = new URLSearchParams(location.search);
+  const reqId = (params.get("model") || params.get("kit") || DEFAULT_ID).toLowerCase();
+  const id = KITS[reqId] ? reqId : DEFAULT_ID;
+  const kit = KITS[id];
+
+  const mv = document.getElementById("mv");
+  const $ = (s) => document.getElementById(s);
+
+  // populate
+  mv.src = kit.src;
+  mv.setAttribute("ios-src", kit.ios);
+  $("kitName").textContent = kit.name;
+  $("kitTagline").textContent = kit.tagline;
+  $("statusId").textContent = "READY · " + id;
+  $("dimW").textContent = kit.dims.w + " mm";
+  $("dimH").textContent = kit.dims.h + " mm";
+  $("dimD").textContent = kit.dims.d + " mm";
+  $("roDims").textContent = kit.dims.w + " × " + kit.dims.d + " mm";
+  $("roTime").textContent = kit.time;
+  $("roFil").textContent = kit.filament;
+
+  if (reqId !== id) {
+    const n = $("notice");
+    n.textContent = "unknown kit '" + reqId + "' · showing default";
+    n.style.display = "block";
+  }
+
+  // reduced motion
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    mv.removeAttribute("auto-rotate");
+  }
+
+  // load progress bar
+  const bar = $("loadbar");
+  mv.addEventListener("progress", (e) => {
+    const p = e.detail.totalProgress;
+    bar.style.width = (p * 100) + "%";
+    bar.style.opacity = p < 1 ? "1" : "0";
+  });
+
+  // AR availability: model-viewer hides the ar-button slot when AR can't run,
+  // so surface a desktop hint instead.
+  mv.addEventListener("load", () => {
+    if (!mv.canActivateAR) $("deskHint").style.display = "block";
+  });
+</script>
+</body>
+</html>
