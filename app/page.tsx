@@ -1,3 +1,6 @@
+import { redirect } from "next/navigation";
+import { DEFAULT_KIT_ID } from "@/lib/kits";
+
 export default function Home() {
-  return <main>scaffold ok</main>;
+  redirect(`/ar/${DEFAULT_KIT_ID}`);
 }
