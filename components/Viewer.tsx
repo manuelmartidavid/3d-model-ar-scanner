@@ -23,6 +23,8 @@ export default function Viewer({ kit }: { kit: Kit }) {
   }, []);
 
   useEffect(() => {
+    setArUnavailable(false);
+    setProgress(0);
     const mv = mvRef.current;
     if (!mv) return;
     const onProgress = (e: Event) => {
