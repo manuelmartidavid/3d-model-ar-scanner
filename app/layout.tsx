@@ -19,13 +19,13 @@ const mono = JetBrains_Mono({
 
 export const metadata = {
   title: "AR Preview",
-  themeColor: "#0E1116",
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover" as const,
+  themeColor: "#0E1116",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
